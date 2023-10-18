@@ -1,6 +1,6 @@
 1 click maridb server install:
 
-sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y mariadb-server && sudo mysql -uroot -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'PASSWORD';" && sudo mysql_secure_installation
+sudo apt update && sudo DEBIAN_FRONTEND=noninteractive apt install -y mariadb-server && sudo mysql_secure_installation
 --------------------------------------
 laravel production optimization:
 php artisan route:cache
