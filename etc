@@ -1,57 +1,119 @@
+rm -r kopipen
+unzip kopipen.zip
+cp .env kopipen/.env
+cd kopipen
+chmod -R 755 storage
+chown -R www-data:www-data storage
+// chown -R nobody:nogroup storage
+--------------------------------------
+ols 1 click install:
+wget https://raw.githubusercontent.com/litespeedtech/ols1clk/master/ols1clk.sh && bash ols1clk.sh --lsphp 82 -E 'mail@mail.com' --pure-mariadb -R 'pass' --adminuser 'kopipen' -A 'pass' -v
+
+/bin/bash <( curl -sk https://raw.githubusercontent.com/litespeedtech/ls-cloud-image/master/Setup/vhsetup.sh ) -d 'app.kopipen.com' -le 'mail@mail.com' -f
+// /bin/bash <( curl -sk https://raw.githubusercontent.com/litespeedtech/ls-cloud-image/master/Setup/vhsetup.sh ) -d 'app.kopipen.com'
+
+VH_ROOT:
+/var/www/app.kopipen.com/kopipen/public
+
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
+
+source ~/.bashrc
+
+nvm install --lts
+
+ufw allow 22,80,443,7080/tcp
+ufw enable
+--------------------------------------
+fileserver (host):
+
+sudo add-apt-repository ppa:ondrej/php
+
+apt update
+
+apt install php8.2 php8.2-xml
+apt install composer
+
+fileserver (client):
+
+apt update
+apt install nfs-common
+mkdir -p /var/www/app.kopipen.com
+mount ip:/mnt/webserver/ /var/www/app.kopipen.com
+df -h
+
+etc/fstab:
+ip:/mnt/webserver/    /var/www/app.kopipen.com   nfs auto,nofail,noatime,nolock,intr,tcp,actimeo=1800 0 0
+--------------------------------------
 1 click maridb server install:
 
 sudo apt update && sudo DEBIAN_FRONTEND=noninteractive apt install -y mariadb-server && sudo mysql_secure_installation
+
+mysql -u root -p
+CREATE USER 'user'@'%' IDENTIFIED BY 'pass';
+GRANT ALL PRIVILEGES ON *.* TO 'user'@'%';
+FLUSH PRIVILEGES;
+
+sysctl -e vm.swappiness=1
+
+/etc/mysql/mariadb.conf.d/50-server.cnf:
+skip-name-resolve
+# bind-address            = 127.0.0.1
+max_connections        = 200
+
+# query_cache_size=64M
+tmp_table_size=64M
+max_heap_table_size=64M
+query_cache_size = 0
+query_cache_type = OFF
+innodb_buffer_pool_size = 800MB
+(80% of system ram)
+
+innodb_dedicated_server = 1
+innodb_log_files_in_group = 2
+innodb_buffer_pool_instances = 1
+innodb_log_buffer_size = 256M
+innodb_thread_concurrency = 2
+innodb_file_per_table = ON
+innodb_stats_on_metadata = OFF
+innodb_log_file_size = 64M
+
+curl -L https://raw.githubusercontent.com/BMDan/tuning-primer.sh/main/tuning-primer.sh | bash
+
+simple script check if mysql is running or not (cronjob):
+#!/bin/bash
+
+# Check if MySQL is running
+sudo service mysql status > /dev/null 2>&1
+
+# Restart the MySQL service if it's not running.
+if [ $? != 0 ]; then
+    sudo service mysql restart
+fi
 --------------------------------------
-laravel production optimization:
+production optimization:
 php artisan route:cache
 php artisan config:cache
 php artisan view:cache
 composer dumpautoload -o
 composer install --prefer-dist --no-dev -o
-npm run production
 --------------------------------------
 if sh: 1: vite: Permission denied:
 rm -rf node_modules/
 npm install
 --------------------------------------
 opcache:
+zend_extension=opcache
+
 opcache.enable=1
-opcache.memory_consumption=512
+opcache.jit_buffer_size=100M
+opcache.memory_consumption=256
 opcache.interned_strings_buffer=64
-opcache.max_accelerated_files=20000
+opcache.max_accelerated_files=50000
+opcache.max_wasted_percentage=15
 opcache.validate_timestamps=0
 opcache.save_comments=1
-opcache.fast_shutdown=1
+opcache.revalidate_freq=60
+
+zlib.output_compression = On
+zlib.output_compression_level = 5
 -------------------------------------
-tuned for laravel:
-query_cache_type=1
-query_cache_size=134217728
-query_cache_limit=16777216
-query_cache_min_res_unit=4096
-thread_cache_size=0
-key_buffer_size=8388608
-max_allowed_packet=1073741824
-sort_buffer_size=2097152
-read_rnd_buffer_size=262144
-bulk_insert_buffer_size=8388608
-myisam_sort_buffer_size=8388608
-innodb_buffer_pool_chunk_size=134217728
-innodb_buffer_pool_size=805306368
-max_heap_table_size=16777216
-tmp_table_size=16777216
-join_buffer_size=8388608
-max_connections=151
-table_open_cache=2048
-table_definition_cache=1408
-innodb_flush_log_at_trx_commit=1
-innodb_log_file_size=201326592
-innodb_log_buffer_size=16777216
-innodb_write_io_threads=4
-innodb_read_io_threads=4
-innodb_file_per_table=1
-innodb_flush_method=O_DIRECT
-innodb_thread_concurrency=0
-innodb_purge_threads=4
-optimizer_search_depth=0
-thread_handling=pool-of-threads
-thread_pool_size=2
