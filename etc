@@ -12,6 +12,13 @@ wget https://raw.githubusercontent.com/litespeedtech/ols1clk/master/ols1clk.sh &
 /bin/bash <( curl -sk https://raw.githubusercontent.com/litespeedtech/ls-cloud-image/master/Setup/vhsetup.sh ) -d 'app.kopipen.com' -le 'mail@mail.com' -f
 // /bin/bash <( curl -sk https://raw.githubusercontent.com/litespeedtech/ls-cloud-image/master/Setup/vhsetup.sh ) -d 'app.kopipen.com'
 
+cd /usr/local/lsws/
+
+sudo ./bin/olscontrol modify VH_NAME vhconf -v docRoot /path/to/new/root
+
+sudo ./bin/lswsctrl restart
+
+
 VH_ROOT:
 /var/www/app.kopipen.com/kopipen/public
 
